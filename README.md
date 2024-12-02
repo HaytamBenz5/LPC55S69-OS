@@ -27,4 +27,4 @@ This project implements a simple multitasking operating system for the ARM Corte
 ### Build and Run
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/your-repo-name.git
+   git clone https://github.com/HaytamBenz5/LPC55S69-OS.git
