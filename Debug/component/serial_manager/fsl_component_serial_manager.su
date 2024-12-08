@@ -1,5 +1,5 @@
-C:\Users\BENZINANE\Desktop\LPC55S69_OS.src\drivers/fsl_common.h:827:28:DisableGlobalIRQ	16	static
-C:\Users\BENZINANE\Desktop\LPC55S69_OS.src\drivers/fsl_common.h:858:24:EnableGlobalIRQ	24	static
+C:\Users\benzh\Desktop\LPC55S69-OS\drivers/fsl_common.h:827:28:DisableGlobalIRQ	16	static
+C:\Users\benzh\Desktop\LPC55S69-OS\drivers/fsl_common.h:858:24:EnableGlobalIRQ	24	static
 ../component/serial_manager/fsl_component_serial_manager.c:384:32:SerialManager_StartWriting	32	static
 ../component/serial_manager/fsl_component_serial_manager.c:432:32:SerialManager_StartReading	32	static
 ../component/serial_manager/fsl_component_serial_manager.c:1031:32:SerialManager_Write	32	static

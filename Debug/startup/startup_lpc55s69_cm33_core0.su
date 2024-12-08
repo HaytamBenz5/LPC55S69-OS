@@ -1,4 +1,4 @@
-C:\Users\BENZINANE\Desktop\LPC55S69_OS.src\CMSIS/core_cm33.h:2324:22:__NVIC_SetPriority	16	static
+C:\Users\benzh\Desktop\LPC55S69-OS\CMSIS/core_cm33.h:2324:22:__NVIC_SetPriority	16	static
 ../startup/startup_lpc55s69_cm33_core0.c:336:6:data_init	4	static
 ../startup/startup_lpc55s69_cm33_core0.c:345:6:bss_init	0	static
 ../startup/startup_lpc55s69_cm33_core0.c:370:6:ResetISR	8	static

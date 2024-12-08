@@ -2,8 +2,11 @@
 #include "board.h"
 
 #include "oslib.h"
+#include "target.h"
 
-#define MAIN_EX5
+
+
+#define MAIN_EX11
 
 /*********************************************************************/
 #ifdef MAIN_TEST
@@ -23,8 +26,6 @@ int main()
 	    } else {
 	        printf("echec libération mémoire\n");
 	    }
-
-
 
 
 	return 0;
@@ -230,7 +231,7 @@ void tache1()
     while (1) {
     	state=!state;
         leds(state<<2);			// toggle led
-        task_wait(200);
+        task_wait(50);
 
     }
 }
@@ -286,6 +287,7 @@ void tache1()
         sem_p(mutex);
         printf("- tache %d\r\n", (int)id);
         sem_v(mutex);
+
         leds(0);			// toggle blue led
         task_wait(1500);
         leds(1<<2);			// toggle blue led
@@ -301,6 +303,7 @@ void tache2()
         sem_p(mutex);
         printf("tache %d\r\n", (int)id);
         sem_v(mutex);
+
         task_wait(500);
     }
 }
@@ -329,6 +332,7 @@ int main()
 #endif
 /*********************************************************************/
 #ifdef MAIN_EX7
+
 void code1()
 {
     uint32_t id=task_id();
@@ -369,6 +373,7 @@ void code4()
         for (int k=0;k<50000;k++);
     }
     printf("end of task %d\r\n",id);
+    task_kill();
 }
 
 int main()
@@ -394,6 +399,7 @@ void tache1()
 	int n, i;
 
 	fd=open("/dev/test", O_READ);
+
 	if (fd!=-1) {
 		// lseek(fd,5);
 		n=read(fd, buffer, 32);
@@ -471,7 +477,7 @@ void tache1()
 
     while (1) {
         int pushed;
-        read(bfd,(void*)&pushed,4);    // bloque la tache jusqu'Ã  l'appui sur swcenter
+        read(bfd,(void*)&pushed,4);    // Fonction bloquante on attend l'appui du button user
         write(lfd,&data,1);
         data=data<<1;
         if (data==0x8) data=1;
@@ -497,6 +503,45 @@ int main()
 #endif
 /*********************************************************************/
 #ifdef MAIN_EX11
-/* ... */
+
+void tache1()
+{
+    int serial = open("/dev/serial", O_RDWR);
+
+    char buff[255];
+    char buff2[255] = "\n\rYou entered:";
+    char* strDebug = "\n\rBenzinane Haitam";
+
+    write(serial, strDebug, strlen(strDebug));
+
+    while (1)
+    {
+        read(serial, (void*)buff, 1);
+
+        write(serial, buff2, strlen(buff2));
+
+        write(serial, (void*)buff, 1);
+    }
+}
+
+
+void idle()
+{
+    while(1) {}
+}
+
+
+int main()
+{
+	initi_usart0();
+    task_new(tache1,1024);
+    task_new(idle,0);
+
+    os_start();
+
+    return 0;
+}
+
 #endif
+
 /*********************************************************************/

@@ -94,7 +94,9 @@ void task_yield()
  */
 void  task_wait(uint32_t ms)
 {
-	/* A COMPLETER */
+		int32_t val;
+	__ASM volatile ("svc 6\n\tmov %0, r0" : "=r" (val));
+    return val;
 }
 
 /*****************************************************************************

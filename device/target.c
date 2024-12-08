@@ -1,13 +1,25 @@
 #include <stdlib.h>
 #include <string.h>
-
 #include "board.h"
 #include "fsl_pint.h"
 #include "fsl_inputmux.h"
-
 #include "vfs.h"
 #include "target.h"
+#include "pin_mux.h"
+#include "clock_config.h"
+#include "fsl_common.h"
+#include "fsl_debug_console.h"
+#include "fsl_adapter_uart.h"
 
+
+////////// USART Serial Communication ////////////////
+
+#define DEMO_UART_INSTANCE (0U)  // Using USART0
+#define DEMO_UART_BAUDRATE (115200U)
+
+
+/* Define the UART handle buffer globally. */
+UART_HANDLE_DEFINE(uartHandle);
 /***************************************************************************
  * external symbols
  ***************************************************************************/
@@ -43,12 +55,16 @@ static int dev_init_test(Device *dev)
 
 static int dev_open_test(FileObject *f)
 {
+	// section critique
+
 	sem_p(f->dev->mutex);
+
     if (f->flags & (O_READ)) {
         f->dev->refcnt++;
         sem_v(f->dev->mutex);
         return 1;
     }
+
     sem_v(f->dev->mutex);
     return 0;
 }
@@ -64,14 +80,16 @@ static int dev_close_test(FileObject *f)
 static int dev_read_test(FileObject *f, void *buf, size_t len)
 {
 	int n;
-	char *file="ceci est un test\r\n";
+	char *file="From File example : Benzinane\r\n";
 	sem_p(f->dev->mutex);
+
 	// calculate max available readable data length
 	n=f->offset<strlen(file) ? strlen(file)-f->offset : 0;
 	// actually, we have to read the min from available length and expected length
 	n=n<(int)len ? n : (int)len;
 	memcpy(buf, file+f->offset, n);
 	f->offset+=n;
+
 	sem_v(f->dev->mutex);
 	return n;
 }
@@ -99,7 +117,13 @@ Device dev_leds={
     .refcnt=0,
     .init=dev_init_leds,
     
-	/* A COMPLETER */
+    .sem_read=NULL,
+    .sem_write=NULL,
+    .open=dev_open_leds,
+    .close=dev_close_leds,
+    .read=NULL,
+    .write=dev_write_leds,
+    .ioctl=NULL
 };
 
 static int dev_init_leds(Device *dev)
@@ -114,6 +138,7 @@ static int dev_init_leds(Device *dev)
 	leds(0);
 
 	/* A COMPLETER */
+	dev->mutex = sem_new(1);//create r/w mutex
 
 	return 1;
 }
@@ -143,7 +168,11 @@ static int dev_close_leds(FileObject *f)
 
 static int dev_write_leds(FileObject *f, void *buf, size_t len)
 {
-	/* A COMPLETER */
+	sem_p(f->dev->mutex);//enter critical space
+
+	leds(*(uint32_t*)buf);
+
+	sem_v(f->dev->mutex);//leave critical space
 
     return 1;
 }
@@ -161,7 +190,13 @@ Device dev_swuser={
     .refcnt=0,
     .init=dev_init_btn,
     
-	/* A COMPLETER */
+		.open = dev_open_btn,
+		.close = dev_close_btn,
+		.read = dev_read_btn,
+		.write = NULL,
+		.sem_read = NULL,
+		.sem_write = NULL,
+		.ioctl = NULL
 };
 
 /*
@@ -169,7 +204,8 @@ Device dev_swuser={
  */
 static void on_swuser_cb(pint_pin_int_t pintr, uint32_t pmatch_status)
 {
-	/* A COMPLETER */
+	sem_v(dev_swuser.sem_read);
+
 }
 
 static int dev_init_btn(Device *dev)
@@ -187,7 +223,8 @@ static int dev_init_btn(Device *dev)
 	/* Enable callbacks for PINT0 by Index */
     PINT_EnableCallbackByIndex(PINT, kPINT_PinInt0);
 
-	/* A COMPLETER */
+    dev->sem_read = sem_new(1);
+    dev->mutex = sem_new(1);
 
     return 1;
 }
@@ -217,9 +254,93 @@ static int dev_close_btn(FileObject *f)
 
 static int dev_read_btn(FileObject *f, void *buf, size_t len)
 {
-	/* A COMPLETER */
+	sem_p(f->dev->sem_read);// attent jusqu'un button est la
 	
     return 4;
+}
+
+
+
+/***************************************************************************
+ * External Interrupt Serial device driver
+ ***************************************************************************/
+static int dev_init_ser(Device *dev);
+static int dev_open_ser(FileObject *f);
+static int dev_close_ser(FileObject *f);
+static int dev_read_ser(FileObject *f, void *buf, size_t len);
+static int dev_write_ser(FileObject *f, void *buf, size_t len);
+
+Device dev_serial={
+    .name="serial",
+    .refcnt=0,
+    .init=dev_init_ser,
+
+	.open = dev_open_ser,
+	.close = dev_close_ser,
+	.read = dev_read_ser,
+	.write = dev_write_ser,
+	.sem_read = NULL,
+	.sem_write = NULL,
+	.ioctl = NULL
+};
+
+
+
+static int dev_init_ser(Device *dev)
+{
+    dev->mutex=sem_new(1);
+
+    if (dev->mutex)
+    	return 1;
+    return 0;
+}
+
+static int dev_open_ser(FileObject *f)
+{
+	sem_p(f->dev->mutex);
+    if ((f->flags & O_READ) || (f->flags & O_WRITE))
+    {
+        f->dev->refcnt++;
+        sem_v(f->dev->mutex);
+        return 1;
+    }
+    sem_v(f->dev->mutex);
+    return 0;
+}
+
+static int dev_close_ser(FileObject *f)
+{
+	sem_p(f->dev->mutex);
+    f->dev->refcnt--;
+    sem_v(f->dev->mutex);
+    return 1;
+}
+
+static int dev_read_ser(FileObject *f, void *buf, size_t len)
+{
+    sem_p(f->dev->mutex);
+
+
+    char* buff = (char*)buf;
+
+    // Lecture bloquante sur USART0
+    HAL_UartReceiveBlocking((hal_uart_handle_t)uartHandle, (uint8_t*)buf, len);
+
+    f->offset = 0;
+
+    sem_v(f->dev->mutex);
+    return (int)len; // Retour du nombre d'octets réellement lus
+}
+
+static int dev_write_ser(FileObject *f, void *buf, size_t len)
+{
+    sem_p(f->dev->mutex);
+
+    // Écriture bloquante sur USART0
+    HAL_UartSendBlocking((hal_uart_handle_t)uartHandle, (const uint8_t *)buf, len);
+
+    sem_v(f->dev->mutex);
+    return (int)len; // Retour du nombre d'octets réellement écrits
 }
 
 /***************************************************************************
@@ -229,6 +350,7 @@ Device * device_table[]={
 	&dev_test,
 	&dev_leds,
     &dev_swuser,
+	&dev_serial,
 	NULL
 };
 
@@ -251,4 +373,39 @@ void dev_init()
 
     vfs_mutex=sem_new(1);
 }
+
+
+
+
+
+///////////// Initialisation de la communication USART0 /////////////////////////
+
+
+
+hal_uart_status_t initi_usart0(void)
+{
+    /* Initialize board hardware */
+    BOARD_InitPins();
+    BOARD_InitDebugConsole(); // Optional, to use PRINTF
+    uint32_t srcClock_Hz = CLOCK_GetFlexCommClkFreq(DEMO_UART_INSTANCE);
+
+    /* Set up the UART configuration */
+    hal_uart_config_t uartConfig = {
+        .srcClock_Hz  = srcClock_Hz,
+        .baudRate_Bps = DEMO_UART_BAUDRATE,
+        .parityMode   = kHAL_UartParityDisabled,
+        .stopBitCount = kHAL_UartOneStopBit,
+        .enableRx     = 1U,
+        .enableTx     = 1U,
+        .enableRxRTS  = 0U,
+        .enableTxCTS  = 0U,
+        .instance     = DEMO_UART_INSTANCE,
+        // If you want non-blocking mode, set .mode = kHAL_UartNonBlockMode here.
+    };
+    /* Initialize the UART */
+    hal_uart_status_t status = HAL_UartInit((hal_uart_handle_t)uartHandle, &uartConfig);
+    return status;
+}
+///////////////////////// ///////////////////////// ///////////////////////// ////////////////////
+
 

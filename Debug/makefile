@@ -51,7 +51,7 @@ main-build: LPC55S69_OS.src.axf
 LPC55S69_OS.src.axf: $(OBJS) $(USER_OBJS) makefile $(OPTIONAL_TOOL_DEPS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU Linker'
-	arm-none-eabi-gcc -nostdlib -L"C:\Users\BENZINANE\Desktop\LPC55S69_OS.src\LPC55S69\mcuxpresso" -Xlinker -Map="LPC55S69_OS.src.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -Xlinker --sort-section=alignment -Xlinker --cref -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -T LPC55S69_OS_src_Debug.ld -o "LPC55S69_OS.src.axf" $(OBJS) $(USER_OBJS) $(LIBS) -lpower_hardabi
+	arm-none-eabi-gcc -nostdlib -L"C:\Users\benzh\Desktop\LPC55S69-OS\LPC55S69\mcuxpresso" -Xlinker -Map="LPC55S69_OS.src.map" -Xlinker --gc-sections -Xlinker -print-memory-usage -Xlinker --sort-section=alignment -Xlinker --cref -mcpu=cortex-m33 -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -T LPC55S69_OS_src_Debug.ld -o "LPC55S69_OS.src.axf" $(OBJS) $(USER_OBJS) $(LIBS) -lpower_hardabi
 	@echo 'Finished building target: $@'
 	@echo ' '
 

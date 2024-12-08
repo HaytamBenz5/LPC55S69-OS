@@ -1,5 +1,5 @@
-C:\Users\BENZINANE\Desktop\LPC55S69_OS.src\CMSIS/core_cm33.h:2324:22:__NVIC_SetPriority	16	static
-C:\Users\BENZINANE\Desktop\LPC55S69_OS.src\CMSIS/core_cm33.h:2773:26:SysTick_Config	16	static
+C:\Users\benzh\Desktop\LPC55S69-OS\CMSIS/core_cm33.h:2324:22:__NVIC_SetPriority	16	static
+C:\Users\benzh\Desktop\LPC55S69-OS\CMSIS/core_cm33.h:2773:26:SysTick_Config	16	static
 ../kernel/kernel.c:26:5:sys_add	16	static
 ../kernel/kernel.c:37:9:svc_dispatch	24	static
 ../kernel/kernel.c:87:6:sys_switch_ctx	4	static
